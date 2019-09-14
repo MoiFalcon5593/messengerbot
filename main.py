@@ -54,10 +54,11 @@ def send_message(recipient_id, message_text):
         "message": message
     }
     data = json.dumps(raw_data)
+
     r = urlfetch.fetch("https://graph.facebook.com/v2.6/me/messages?access_token=%s" % ACCESS_TOKEN,
                        method=urlfetch.POST, headers=headers, payload=data)
     if r.status_code != 200:
-        logging.error("Error %r enviando mensaje: %s", r.status_code)
+        logging.error("Error %r enviando mensaje: %s", r.status_code, r.content)
 
 def get_postback_buttons_message(message_text, possible_answers):
     buttons = []
