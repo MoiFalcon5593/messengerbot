@@ -3,13 +3,23 @@ import webapp2
 import json
 import logging
 from google.appengine.api import urlfetch
+from bot import Bot
+import yaml
 
 VERIFY_TOKEN = "facebook_verification_token"
-ACCESS_TOKEN = "EAAKASDPk4TgBAIYZAZCcEUczNUHq7laEQaMK6gp05ZAlHtupRjVTjue9Qyn2V2YZBJ6bUpnAZA7szNGQy72NeTkqJ5flkzdOXJjfCuwTSIB2y8zY9QgjWnswXzH3vmP8VFC9B3fPlalZBOZA0SQZBr9wj9q7uO1OZAnhKSvZAVWBagMzN3ndS96IMi"
+ACCESS_TOKEN = "EAAKASDPk4TgBAIA6M5ctZA4HFrZBF0zuRtRpZAKqRIG9VGZBlqadVW5mmrzBSxCmNBxTZCb5zZA5zxky5NO3WXF1iTY7zCQdfrsuQNdOs7FrTzhdiRlVXusYUPSrrKZAuMX3DUxYMPS1BQLGAb1X9EhJCa4VyNwiudG56GQZC5YDrwZDZD"
 
 class MainPage(webapp2.RequestHandler):
+    def __init__(self, request=None, response=None):
+        super(MainPage, self).__init__(request, response)
+        logging.info("Instanciando bot")
+        tree = yaml.load(open('tree.yaml'))
+        logging.info("tree: %r", tree)
+        self.bot = Bot(send_message,None, tree)
+
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
+        # self.response.write('Pronto esto sera un webhook')
         mode = self.request.get("hub.mode")
         if mode == "subscribe":
             challenge = self.request.get("hub.challenge")
@@ -17,7 +27,8 @@ class MainPage(webapp2.RequestHandler):
             if verify_token == VERIFY_TOKEN:
                 self.response.write(challenge)
         else:
-            self.response.write("Ok")
+            #self.response.write("Ok")
+            self.bot.handle(0, "message_text")
 
     def post(self):
         data = json.loads(self.request.body)
@@ -33,19 +44,26 @@ class MainPage(webapp2.RequestHandler):
                         message = messaging_event['message']
                         message_text = message.get('text','')
                         logging.info("Mensaje obtenido desde msgr: %s", message_text)
-                        send_message(sender_id, "hola, soy un bot") 
+                        # bot handle
+                        self.bot.handle(sender_id, message_text)
+                        #send_message(sender_id, "hola, soy un bot") 
 
                     if messaging_event.get("postback"):
                         logging.info("Post-back")
-
-def send_message(recipient_id, message_text):
-    logging.info("Enviando mensaje a %r: %s", recipient_id, message_text)
+#conocida tambien como la funcion send_callback de bot.py
+def send_message(recipient_id, message_text, possible_answers):
+    #logging.info("Enviando mensaje a %r: %s", recipient_id, message_text)
     headers = {
         "Content-Type": "application/json"
     }
     #message = {"text": message_text}
-    possible_answers = ["Opcion A", "Opcion B", "Opcion C"]
+    # max buttons quantity :3 
+    # max recommended answer length: 20 
+    #possible_answers = ["Opcion A", "Opcion B", "Opcion C"]
+    #menesaje de la funcion get_postback
     message = get_postback_buttons_message(message_text, possible_answers)
+    if message is None:
+        message = {"text": message_text}
 
     raw_data = {
         "recipient": {
@@ -55,16 +73,23 @@ def send_message(recipient_id, message_text):
     }
     data = json.dumps(raw_data)
 
+    logging.info("Enviando mensaje a %r: %s", recipient_id, message_text)
+    #bot envia informacion a la API de facebook messenger validando (se puede trabajar con dev_appserver.py ./ o glocud app deploy)
     r = urlfetch.fetch("https://graph.facebook.com/v2.6/me/messages?access_token=%s" % ACCESS_TOKEN,
                        method=urlfetch.POST, headers=headers, payload=data)
     if r.status_code != 200:
-        logging.error("Error %r enviando mensaje: %s", r.status_code, r.content)
+        logging.error("Error %r enviando mensaje: %s", r.status_code, r.content) 
 
 def get_postback_buttons_message(message_text, possible_answers):
+    if possible_answers is None or len(possible_answers) > 3:
+        return 
+    #if len(possible_answers) > 3:
+    #    return None    
+
     buttons = []
     for answer in possible_answers:
         buttons.append({
-            "type": "postback,",
+            "type": "postback",
             "title": answer,
             "payload": answer
         })
@@ -79,8 +104,6 @@ def get_postback_buttons_message(message_text, possible_answers):
                 }
             }
         }
-
-
 app = webapp2.WSGIApplication([
     ('/', MainPage),
 ], debug=True)
