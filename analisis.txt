@@ -1,0 +1,20 @@
+abc
+-> (?)
+--> No escribir nada
+-->Reiniciar la comunicacion
+
+"Hola soy tu asistente virtual de venta EFV,selecciona para ayudarte". | "bot"
+"Productos disponibles" | "user"
+"Tenemos varios productos! todos de ellos son muy interesantes. Por favor seleccione 
+el producto que mas le guste"|"bot"
+"Zapatillas"|"user"
+-->mostrar producto |bot
+
+"xyz" |"user"
+"Disculpa no entendi. ¿Quieres volver a empezar?"|"bot" Si, No
+"Si"|"user"|reset=true
+---
+
+Como se reinicia la conversacion ?
+-Eliminar (limpiar) el historial
+-
