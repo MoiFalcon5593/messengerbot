@@ -5,6 +5,7 @@ import logging
 from google.appengine.api import urlfetch
 from bot import Bot
 import yaml
+from user_events import UserEventsDao
 
 VERIFY_TOKEN = "facebook_verification_token"
 ACCESS_TOKEN = "EAAKASDPk4TgBAIA6M5ctZA4HFrZBF0zuRtRpZAKqRIG9VGZBlqadVW5mmrzBSxCmNBxTZCb5zZA5zxky5NO3WXF1iTY7zCQdfrsuQNdOs7FrTzhdiRlVXusYUPSrrKZAuMX3DUxYMPS1BQLGAb1X9EhJCa4VyNwiudG56GQZC5YDrwZDZD"
@@ -15,7 +16,17 @@ class MainPage(webapp2.RequestHandler):
         logging.info("Instanciando bot")
         tree = yaml.load(open('tree.yaml'))
         logging.info("tree: %r", tree)
-        self.bot = Bot(send_message,None, tree)
+        self.bot = Bot(send_message, None, tree)
+        dao = UserEventsDao()
+        # dao.add_user_event("123", "user", "abc")
+        # dao.add_user_event("123", "bot", "def")
+        # dao.add_user_event("123", "user", "ghi")
+        # dao.add_user_event("123", "bot", "jkl")
+        # dao.add_user_event("123", "user", "mnñ")
+        # data = dao.get_user_events("123")
+        # logging.info("eventos: %r", data)
+        dao.remove_user_events("123")
+
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
@@ -27,8 +38,8 @@ class MainPage(webapp2.RequestHandler):
             if verify_token == VERIFY_TOKEN:
                 self.response.write(challenge)
         else:
-            #self.response.write("Ok")
-            self.bot.handle(0, "message_text")
+            self.response.write("Ok")
+            #self.bot.handle(0, "message_text")
 
     def post(self):
         data = json.loads(self.request.body)
@@ -82,7 +93,7 @@ def send_message(recipient_id, message_text, possible_answers):
 
 def get_postback_buttons_message(message_text, possible_answers):
     if possible_answers is None or len(possible_answers) > 3:
-        return 
+        return None
     #if len(possible_answers) > 3:
     #    return None    
 
