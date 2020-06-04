@@ -10,13 +10,15 @@ class Bot(object):
     def handle(self, user_id, user_message):
         logging.info("Se invocó el método handle")
         #obtener el historial de eventos|mensajes intercambiados con el usuario apartir de una base de datos
-        #Respuesta al usario
-        history = [
-            (u"Hola! Soy tu asistente de virtual", "bot"),
-            (u"Cursos disponibles", "user"),
-            (u"Tenemos varios cursos! Todos ellos son muy interesantes y totalmente prácticos. Por favor selecciona la opción que te resulte más interesante.", "bot"),
-            (user_message, "user")
-        ]
+        self.users_dao.add_user_event(user_id, 'user', user_message)
+        history = self.users_dao.get_user_events(user_id)
+
+        # history = [
+        #     (u"Hola! Soy tu asistente de virtual", "bot"),
+        #     (u"Productos disponibles", "user"),
+        #     (u"Tenemos varios cursos! Todos ellos son muy interesantes y totalmente prácticos. Por favor selecciona la opción que te resulte más interesante.", "bot"),
+        #     (user_message, "user")
+        # ]
 
         
         #Determine 1 rpta en funcion al mensaje escrito por el usuario y (tree)
@@ -32,8 +34,14 @@ class Bot(object):
             if author == 'bot':
                 #print type(text)
                 #print type(tree['say'])
+                """interpreting them as being unequals ->moi"""
+                """
+                if 'say' in tree and text == tree['say'] and 'answers' in tree:
+                    tree = tree['answers']
+                """  
                 if text == tree['say']:
                     tree = tree['answers']
+
 
             elif author == 'user':
                 key = get_key_if_valid(text, tree)
@@ -49,6 +57,7 @@ class Bot(object):
 
 
         self.send_callback(user_id, response_text, possible_answers)
+        self.users_dao.add_user_event(user_id, 'bot', response_text)
 
 def get_key_if_valid(text, dictionary):
     for key in dictionary:
